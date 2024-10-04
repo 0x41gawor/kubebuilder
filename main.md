@@ -184,3 +184,25 @@ This is "fast" diagram. More detailed one will be designed where more hands-on k
 
 # Quick start
 https://book.kubebuilder.io/quick-start
+
+This Quick Start guide will cover:
+- Creating a project -> setting up kubebuilder boilerplate code
+- Creating an API -> [What does it mean](creating-an-api.md)
+- Running locally
+- Running in-cluster
+
+## Installation
+```sh
+# download kubebuilder and install locally.
+curl -L -o kubebuilder "https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)"
+chmod +x kubebuilder && sudo mv kubebuilder /usr/local/bin/
+```
+## Create a project
+```sh
+mkdir -p ~/projects/guestbook
+cd ~/projects/guestbook
+kubebuilder init --domain my.domain --repo my.domain/guestbook
+```
+
+It resulted with such directory/files structure:
+![](img/8.png)
