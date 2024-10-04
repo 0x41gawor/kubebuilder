@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guestbook-operator
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: guestbook-operator
+  template:
+    metadata:
+      labels:
+        app: guestbook-operator
+    spec:
+      serviceAccountName: guestbook-operator
+      containers:
+        - name: manager
+          image: my.domain/guestbook-operator:latest
+          ports:
+            - containerPort: 9443
+              name: webhook-server
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+
