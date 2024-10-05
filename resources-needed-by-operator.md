@@ -32,7 +32,7 @@ spec:
 # Resources needed to deploy the Operator
 ## 1st round
 ### Service Account
-It provides an operator with an identity and is used for authentication during communicating with `kube-api-server`
+It provides an operator with an identity that is used for authentication during communicating with `kube-api-server`
 ### Roles and RoleBinding
 These specify what actions (e.g. get, list, watch) the operator can perform on which Kubernetes resources.
 
@@ -51,7 +51,6 @@ The operator uses a mechanism called leader election to ensure that only one ins
 ## 2nd round
 ### ServiceAccount
 https://kubernetes.io/docs/concepts/security/service-accounts/
-
 
 ```yaml
 apiVersion: v1
@@ -223,14 +222,14 @@ roleRef:
 ```
 
 ## Summary 
-To deploy a Kubebuilder-based operator, you need a variety of Kubernetes resources, each serving a unique role:
+To deploy a Kubebuilder-based operator, you need a variety of Kubernetes resources, each serving an unique role:
 
-- ServiceAccount: Identity for operator Pods.
-- Role/ClusterRole and RoleBinding/ClusterRoleBinding: Define and assign permissions.
+- ServiceAccount: Identity for operator communication with `kube-api-server`
+- Role/ClusterRole and RoleBinding/ClusterRoleBinding: Define and assign permissions for operators.
 - Deployment: Deploys and manages the operator's Pods.
 - NetworkPolicy (optional): Controls access to the operator for security purposes.
 - Metrics Service (optional): Exposes metrics for monitoring.
-- Leader Election Role and RoleBinding: Manages leader election in case multiple replicas are deployed.
+- Leader Election Role and RoleBinding: Manages leader election in case of HA.
 
 These resources together ensure that the operator runs effectively, has the permissions it needs, and integrates well into the Kubernetes environment.
 
