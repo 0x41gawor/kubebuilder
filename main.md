@@ -259,3 +259,93 @@ First we need to know the difference between the spec and status.
 Here the file [guestbook_controller.go](projects/guestbook/internal/controller/guestbook_controller.go) is important.
 
 ![](img/13.png)
+
+Let's take a closer look at the reconcile function:
+```go
+func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	_ = log.FromContext(ctx)
+
+	// TODO(user): your logic here
+
+	return ctrl.Result{}, nil
+}
+```
+Params:
+- `context.Context` 
+    - it is the generally-known thing in GO. Not a part of https://github.com/kubernetes-sigs/controller-runtime
+    - more can be learned here: [context.md](context-tutorial.md)
+    - In here, it allows for example the reconciliation to be terminated early if needed, such as in the case of a timeout or shutdown.
+- `ctrl.Request`
+    - contains the **namespaced name** of the resource that is being reconciled
+    - it allows the reconciler to fetch the actual object from the K8s cluster (from the `kube-api-server`)
+- ![](img/14.png)
+
+Return type:
+- `ctrol.Result`
+    - This tells the controller-runtime framework wheter the reconcilliation loop shoulld be requeued (i.e. retried) and if so, after how long
+    - if `ctrl.Result{Requeue: true}` is returned, it means the reconciliation should be requeued immediately.
+    - if `ctrl.Result{RequeueAfter: <duration>}` is returned, it means the reconciliation should be requeued after a certain delay.
+    - if `ctrl.Result{}` is returned without requeue, it means that no further action is necessary until another event occurs.
+- `error`
+    -  If an error is returned, the controller-runtime will log the error and requeue the request for reconciliation. This helps the controller continuously try to reach the desired state if an issue occurs.
+
+Exemplary use:
+
+```go
+func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+    // Fetch the Guestbook instance
+    var guestbook webappv1.Guestbook
+    if err := r.Get(ctx, req.NamespacedName, &guestbook); err != nil {
+        if errors.IsNotFound(err) {
+            // The resource may have been deleted, so we ignore the error
+            // and return a successful result without requeueing.
+            return ctrl.Result{}, nil
+        }
+        // If there's an error fetching the resource, requeue the request.
+        return ctrl.Result{}, err
+    }
+
+    // Check the current state and reconcile
+    if guestbook.Spec.Foo == "createSomething" {
+        // Example: Creating a new resource if it doesn't exist
+        newResource := &corev1.Pod{
+            ObjectMeta: metav1.ObjectMeta{
+                Name:      "example-pod",
+                Namespace: req.Namespace,
+            },
+            Spec: corev1.PodSpec{
+                Containers: []corev1.Container{
+                    {
+                        Name:  "busybox",
+                        Image: "busybox",
+                        Command: []string{"sleep", "3600"},
+                    },
+                },
+            },
+        }
+
+        // Set Guestbook instance as the owner and controller of the new resource
+        if err := ctrl.SetControllerReference(&guestbook, newResource, r.Scheme); err != nil {
+            return ctrl.Result{}, err
+        }
+
+        // Create the new resource
+        if err := r.Create(ctx, newResource); err != nil {
+            if !errors.IsAlreadyExists(err) {
+                return ctrl.Result{}, err
+            }
+        }
+    }
+
+    // Example: Update the status
+    guestbook.Status.Phase = "Running"
+    if err := r.Status().Update(ctx, &guestbook); err != nil {
+        return ctrl.Result{}, err
+    }
+
+    // No need to requeue
+    return ctrl.Result{}, nil
+}
+```
+
+As you can see here we use the `r` variable which is the `GuestbookReconciler` itself.
