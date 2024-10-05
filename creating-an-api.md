@@ -1,5 +1,5 @@
 # Kubernets API
-As you might know to manage resources in K8s cluster, `kube-api-server` exposes an REST API.
+As you might know for the purpose of  managing objects in K8s cluster, `kube-api-server` exposes an REST API.
 
 E.g. for managing a resources of a [kind Pod we have endpoints](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#pod-v1-core):
 - `POST /api/v1/namespaces/{namespace}/pods`                -> Creation
@@ -18,7 +18,9 @@ E.g. for managing a resources of a [kind Pod we have endpoints](https://kubernet
 
 During a https://github.com/0x41gawor/pdmgr/blob/master/crd-playground-lab.md an API just like the one above was created for `Loop` kind.
 
-Kubebuilder is not only a tool for developing operators. It is a tool for developing own custom resources, so it also has a part of what can be done by defining a CRD and applying it Kubebuilder additionally add an opportunity to code the controller and webhooks of such resource. I.e. Kubebuilder helps you scaffold and build CRDs along with controller and webhooks to manage them.
+## Building own API
+
+Kubebuilder is not only a tool for developing operators. It is also a tool for developing own custom resources, so it also has a part of what can be done by defining a CRD and applying it. Kubebuilder additionally adds an opportunity to code the controller and webhooks of such resource. I.e. Kubebuilder helps you scaffold and build CRDs along with controller and webhooks to manage them.
 
 When you run a command like
 ```sh

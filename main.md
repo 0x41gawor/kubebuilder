@@ -219,3 +219,43 @@ It resulted with such directory/files structure:
 
 For better understanding of `/config` directory go to -> [resources-needed-by-operator.md](resources-needed-by-operator.md)
 
+## Create an API
+
+[What does it mean to create an API?](creating-an-api.md)
+
+```sh
+kubebuilder create api --group webapp --version v1 --kind Guestbook
+```
+
+This will create new API group-version (`webapp/v1`) and the new kind `guestbook` in it.
+
+> *Why we have separate command for api creation and project initialization? bcuz we can have several apis = custom resources developed in a single project
+
+> *Why we are creating a new api, not a new CRD? bcuz the ultimate goal is to extend our cluster's kube-api-server with new endpoints, and to code logic behind them
+
+Ok let's run it!
+
+kubebuilder asks us if to create resource and controller, click yes so you will have a scaffolds for that
+
+After this operation we've got some new files or changes in existing files in our project.
+
+![](img/11.png)
+
+### api/v1
+Our new kind Guestbook specifies several Go struct types. All of these are placed in [api/v1/guestbook_types.go](projects/guestbook/api/v1/guestbook_types.go).
+
+This file is for us, developers to edit.
+
+First we need to know the difference between the spec and status.
+
+**spec** -> specification of an object. This is the DESIRED state of an object epressed in yaml manifest file.
+
+**status** -> status of an object. This is the CURRENT state of an object stored in etcd.
+
+![](img/12.png)
+
+### internal controller
+
+Here the file [guestbook_controller.go](projects/guestbook/internal/controller/guestbook_controller.go) is important.
+
+![](img/13.png)
