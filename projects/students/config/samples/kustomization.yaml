@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- school.io_v1_student.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

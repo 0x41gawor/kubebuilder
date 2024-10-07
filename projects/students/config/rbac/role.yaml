@@ -1,0 +1,32 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - school.io.gawor.com
+  resources:
+  - students
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - school.io.gawor.com
+  resources:
+  - students/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - school.io.gawor.com
+  resources:
+  - students/status
+  verbs:
+  - get
+  - patch
+  - update

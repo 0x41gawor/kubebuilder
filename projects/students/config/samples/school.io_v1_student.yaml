@@ -1,0 +1,9 @@
+apiVersion: school.io.gawor.com/v1
+kind: Student
+metadata:
+  labels:
+    app.kubernetes.io/name: students
+    app.kubernetes.io/managed-by: kustomize
+  name: student-sample
+spec:
+  # TODO(user): Add fields here
