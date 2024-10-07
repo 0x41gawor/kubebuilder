@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,9 +48,27 @@ type GuestbookReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/reconcile
 func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	// Create a logger from the context
+	logger := log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	// Log the creation of a new Guestbook resource
+	logger.Info("Reconciling Guestbook resource", "namespace", req.Namespace, "name", req.Name)
+
+	// Fetch the Guestbook instance
+	var guestbook webappv1.Guestbook
+	if err := r.Get(ctx, req.NamespacedName, &guestbook); err != nil {
+		// If the resource is not found, it might have been deleted after the reconcile request.
+		// In this case, just return without error.
+		if errors.IsNotFound(err) {
+			logger.Info("Guestbook resource not found. Ignoring since object must be deleted", "namespace", req.Namespace, "name", req.Name)
+			return ctrl.Result{}, nil
+		}
+		// If an error occurred while fetching the resource, requeue the request
+		logger.Error(err, "Failed to get Guestbook resource", "namespace", req.Namespace, "name", req.Name)
+		return ctrl.Result{}, err
+	}
+
+	// TODO: Implement your reconciliation logic here
 
 	return ctrl.Result{}, nil
 }
