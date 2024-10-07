@@ -229,13 +229,13 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 
 This will create new API group-version (`webapp/v1`) and the new kind `guestbook` in it.
 
-> *Why we have separate command for api creation and project initialization? bcuz we can have several apis = custom resources developed in a single project
+> *Why do we have separate command for api creation and project initialization? bcuz we can have several apis = custom resources developed in a single project
 
-> *Why we are creating a new api, not a new CRD? bcuz the ultimate goal is to extend our cluster's kube-api-server with new endpoints, and to code logic behind them
+> *Why are we creating a new api, not a new CRD? bcuz the ultimate goal is to extend our cluster's kube-api-server with new endpoints, and to code logic behind them
 
 Ok let's run it!
 
-kubebuilder asks us if to create resource and controller, click yes so you will have a scaffolds for that
+kubebuilder asks us if to create a resource and controller, click yes so you will have a scaffolds for that
 
 After this operation we've got some new files or changes in existing files in our project.
 
@@ -248,7 +248,7 @@ This file is for us, developers to edit.
 
 First we need to know the difference between the spec and status.
 
-**spec** -> specification of an object. This is the DESIRED state of an object epressed in yaml manifest file.
+**spec** -> specification of an object. This is the DESIRED state of an object expressed in the yaml manifest file.
 
 **status** -> status of an object. This is the CURRENT state of an object stored in etcd.
 
@@ -281,7 +281,7 @@ Params:
 - ![](img/14.png)
 
 Return type:
-- `ctrol.Result`
+- `ctrl.Result`
     - This tells the controller-runtime framework wheter the reconcilliation loop shoulld be requeued (i.e. retried) and if so, after how long
     - if `ctrl.Result{Requeue: true}` is returned, it means the reconciliation should be requeued immediately.
     - if `ctrl.Result{RequeueAfter: <duration>}` is returned, it means the reconciliation should be requeued after a certain delay.
@@ -349,3 +349,140 @@ func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 ```
 
 As you can see here we use the `r` variable which is the `GuestbookReconciler` itself.
+
+
+Let's take a look at `GuestbookReconciler` class.
+
+```go
+// GuestbookReconciler reconciles a Guestbook object
+type GuestbookReconciler struct {
+	client.Client
+	Scheme *runtime.Scheme
+}
+```
+
+In go, if a field is not named it just indicates that this type can directly use method of the indicated interface type. This is the case with the `Client` field.<br>
+`Scheme` on the other hand is a named field. `GuestbookReconciler` type has to store some data in this field. In this case, the scheme of GuestBook.
+
+What methods does `GuestbookReconciler` inherits from `Client`?
+```go
+// Client knows how to perform CRUD operations on Kubernetes objects.
+// via kube-api-server
+type Client interface {
+	Reader
+	Writer
+	StatusClient
+	SubResourceClientConstructor
+
+	// Scheme returns the scheme this client is using.
+	Scheme() *runtime.Scheme
+	// RESTMapper returns the rest this client is using.
+	RESTMapper() meta.RESTMapper
+	// GroupVersionKindFor returns the GroupVersionKind for the given object.
+	GroupVersionKindFor(obj runtime.Object) (schema.GroupVersionKind, error)
+	// IsObjectNamespaced returns true if the GroupVersionKind of the object is namespaced.
+	IsObjectNamespaced(obj runtime.Object) (bool, error)
+}
+
+type Reader interface {
+	// Get retrieves an obj for the given object key from the Kubernetes Cluster.
+	// obj must be a struct pointer so that obj can be updated with the response
+	// returned by the Server.
+    // e.g. r.Get(ctx, req.NamespacedName, &guestbook)
+	Get(ctx context.Context, key ObjectKey, obj Object, opts ...GetOption) error
+
+	// List retrieves list of objects for a given namespace and list options. On a
+	// successful call, Items field in the list will be populated with the
+	// result returned from the server.
+	List(ctx context.Context, list ObjectList, opts ...ListOption) error
+}
+
+// Writer knows how to create, delete, and update Kubernetes objects.
+type Writer interface {
+	// Create saves the object obj in the Kubernetes cluster. obj must be a
+	// struct pointer so that obj can be updated with the content returned by the Server.
+    // e.g. r.Create(ctx, newResource)
+	Create(ctx context.Context, obj Object, opts ...CreateOption) error
+
+	// Delete deletes the given obj from Kubernetes cluster.
+	Delete(ctx context.Context, obj Object, opts ...DeleteOption) error
+
+	// Update updates the given obj in the Kubernetes cluster. obj must be a
+	// struct pointer so that obj can be updated with the content returned by the Server.
+    // e.g. r.Status().Update(ctx, &guestbook)
+	Update(ctx context.Context, obj Object, opts ...UpdateOption) error
+
+	// Patch patches the given obj in the Kubernetes cluster. obj must be a
+	// struct pointer so that obj can be updated with the content returned by the Server.
+	Patch(ctx context.Context, obj Object, patch Patch, opts ...PatchOption) error
+
+	// DeleteAllOf deletes all objects of the given type matching the given options.
+	DeleteAllOf(ctx context.Context, obj Object, opts ...DeleteAllOfOption) error
+}
+
+// StatusClient knows how to create a client which can update status subresource
+// for kubernetes objects.
+type StatusClient interface {
+	Status() SubResourceWriter // Above we have a writer, but this is SUB_RESOURCEwrite. The writer is for the resource (the big one) and SubResourceWriter is only for the part of resource (e.g. Status).
+    // This is used specifically to modify the status field independently from the spec, adhering to Kubernetes' practice of separating desired and observed states.
+}
+```
+
+## Create the CRD files
+
+Ok, let's make some changes in `guestbook_types.go` so we can generate CRD manifest files.
+
+These are the changes in `api/v1/guestbook_types.go`:
+
+![](img/15.png)
+
+Now, let's run:
+
+```sh
+make manifests
+```
+
+A new directory `crd` appeared in `config` dir.
+
+![](img/16.png)
+
+Check out the generated file: [webapp.my.domain_guestbooks.yaml](projects/guestbook/config/crd/bases/webapp.my.domain_guestbooks.yaml)
+
+It defines a schema that will be sent to `kube-api-server` to register a new resource in your k8s cluster.
+
+## Install your custom resource in a cluster
+How to register a new resource? We need to run `kubectl apply -f <our_crd_file>`. Kubebuilder comes with predefined command for it in makefile. Just run:
+```sh
+make install
+```
+
+![](img/17.png)
+
+As you can see before `make install`, our cluster had no resource type "guestbooks". 
+
+After `make install` it has one, but on objects/instances are found in default namespace.
+
+## Make an object of your custom resource kind
+
+Let's create some sample yaml object definition file of our newly regiester kind - "Guestbook".
+
+```yaml
+apiVersion: webapp.my.domain/v1
+kind: Guestbook
+metadata:
+  name: adam
+  namespace: default
+spec:
+  alias: Phone
+  configMapName: adam-config
+  size: 3
+```
+
+>* Kubebuilder already comes with sample file for us to fill. [It's here](projects/guestbook/config/samples/webapp_v1_guestbook.yaml)a
+
+Save such file and run 
+```sh
+kubectl apply -f <file_name>.yaml
+```
+
+![](img/18.png)
