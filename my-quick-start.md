@@ -39,6 +39,8 @@ kubebuilder init --domain gawor.com --repo gawor.com/students
 Now create an API
 ```sh
 kubebuilder create api --group school.io --version v1 --kind Student
+// w Lupus robie tak:
+kubebuilder create api --group lupus --version v1 --kind Execute
 ```
 
 Click `y` to create both Resource and Controller.
